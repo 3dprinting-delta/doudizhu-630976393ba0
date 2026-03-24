@@ -97,6 +97,12 @@
   let state;
   let aiTimeout = null;
 
+  function applyDealAnimation(node, delayMs, lane) {
+    node.classList.add("deal-in", `deal-${lane}`);
+    node.style.setProperty("--deal-delay", `${delayMs}ms`);
+    return node;
+  }
+
   function createRandomSource() {
     if (window.crypto && window.crypto.getRandomValues) {
       const buffer = new Uint32Array(128);
@@ -419,29 +425,42 @@
     elements.landlordLabel.textContent = state.landlordId ? PLAYER_NAMES[state.landlordId] : "Undecided";
   }
 
-  function renderOpponent(playerId, handElement, countElement, lastPlayElement) {
+  function renderOpponent(playerId, handElement, countElement, lastPlayElement, animationPlan) {
     const player = state.players[playerId];
     handElement.innerHTML = "";
-    player.hand.forEach(() => handElement.appendChild(createBackNode()));
+    player.hand.forEach((_, index) => {
+      const node = createBackNode();
+      if (animationPlan) {
+        applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
+      }
+      handElement.appendChild(node);
+    });
     countElement.textContent = `${player.hand.length} cards`;
     lastPlayElement.textContent = player.lastPlayedCards.length
       ? describePlay(player.lastPlayAnalysis, player.lastPlayedCards)
       : "No cards played yet.";
   }
 
-  function renderLandlordCards() {
+  function renderLandlordCards(animationPlan) {
     elements.landlordCards.innerHTML = "";
-    state.landlordCards.forEach((card) => {
+    state.landlordCards.forEach((card, index) => {
       const node = createCardNode(card, false);
       node.disabled = true;
+      if (animationPlan) {
+        applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
+      }
       elements.landlordCards.appendChild(node);
     });
   }
 
-  function renderPlayerHand() {
+  function renderPlayerHand(animationPlan) {
     elements.playerHand.innerHTML = "";
-    state.players.player.hand.forEach((card) => {
-      elements.playerHand.appendChild(createCardNode(card, true));
+    state.players.player.hand.forEach((card, index) => {
+      const node = createCardNode(card, true);
+      if (animationPlan) {
+        applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
+      }
+      elements.playerHand.appendChild(node);
     });
     elements.playerCount.textContent = `${state.players.player.hand.length} cards`;
   }
@@ -521,14 +540,28 @@
   }
 
   function render() {
+    const shouldAnimateDeal = state.shouldAnimateDeal;
     setRoles();
     renderStatus();
-    renderOpponent("left", elements.leftHand, elements.leftCount, elements.leftLastPlay);
-    renderOpponent("right", elements.rightHand, elements.rightCount, elements.rightLastPlay);
-    renderLandlordCards();
-    renderPlayerHand();
+    renderOpponent(
+      "left",
+      elements.leftHand,
+      elements.leftCount,
+      elements.leftLastPlay,
+      shouldAnimateDeal ? { startDelay: 40, stepMs: 36, lane: "left" } : null
+    );
+    renderOpponent(
+      "right",
+      elements.rightHand,
+      elements.rightCount,
+      elements.rightLastPlay,
+      shouldAnimateDeal ? { startDelay: 90, stepMs: 36, lane: "right" } : null
+    );
+    renderLandlordCards(shouldAnimateDeal ? { startDelay: 710, stepMs: 55, lane: "top" } : null);
+    renderPlayerHand(shouldAnimateDeal ? { startDelay: 150, stepMs: 34, lane: "player" } : null);
     renderTablePlay();
     renderSelection();
+    state.shouldAnimateDeal = false;
   }
 
   function nextPlayerId(playerId) {
@@ -793,6 +826,7 @@
       lastPlayedCards: [],
       lastPlayerId: null,
       landlordCards: deck.slice(51),
+      shouldAnimateDeal: true,
       selectedIds: new Set(),
       players: {
         player: { hand: deck.slice(0, 17), lastPlayedCards: [], lastPlayAnalysis: null },
