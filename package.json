@@ -1,0 +1,11 @@
+{
+  "name": "dead-ringer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static quote-classification game backed by a generated public-domain corpus.",
+  "scripts": {
+    "start": "npx serve .",
+    "build:corpus": "node scripts/build-corpus.js",
+    "check": "node --check app.js && node --check scripts/build-corpus.js && node --check scripts/check-corpus.js && node scripts/check-corpus.js"
+  }
+}
