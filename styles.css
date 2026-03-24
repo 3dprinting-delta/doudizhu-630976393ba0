@@ -112,6 +112,7 @@ h1, h2, p, ul { margin: 0; }
 .log-item { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 10px 12px; border-radius: 16px; background: rgba(244, 247, 239, 0.04); border: 1px solid rgba(244, 247, 239, 0.08); }
 .log-speaker { color: var(--gold); font-weight: 800; }
 .bottom-row { grid-template-columns: 1.25fr 0.75fr; margin-top: 18px; align-items: start; }
+.hand-order-button { margin-top: 14px; justify-self: start; }
 .player-hand { margin-top: 18px; }
 .rules-copy { margin-top: 14px; line-height: 1.72; }
 .rules-list { margin-top: 16px; padding-left: 18px; line-height: 1.7; }
