@@ -103,6 +103,12 @@
     return node;
   }
 
+  function applyPlayAnimation(node, delayMs) {
+    node.classList.add("play-in");
+    node.style.setProperty("--play-delay", `${delayMs}ms`);
+    return node;
+  }
+
   function createRandomSource() {
     if (window.crypto && window.crypto.getRandomValues) {
       const buffer = new Uint32Array(128);
@@ -411,6 +417,8 @@
   }
 
   function setRoles() {
+    elements.landlordLabel.classList.toggle("landlord-crowned", Boolean(state.landlordReveal));
+    elements.statusTitle.classList.toggle("landlord-crowned", Boolean(state.landlordReveal));
     for (const playerId of PLAYER_IDS) {
       const isLandlord = state.landlordId === playerId;
       const role = isLandlord ? "Landlord" : "Peasant";
@@ -443,11 +451,15 @@
 
   function renderLandlordCards(animationPlan) {
     elements.landlordCards.innerHTML = "";
+    elements.landlordCards.classList.toggle("landlord-reveal", Boolean(state.landlordReveal));
     state.landlordCards.forEach((card, index) => {
       const node = createCardNode(card, false);
       node.disabled = true;
       if (animationPlan) {
         applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
+      } else if (state.landlordReveal) {
+        node.classList.add("landlord-card-flare");
+        node.style.setProperty("--reveal-delay", `${index * 90}ms`);
       }
       elements.landlordCards.appendChild(node);
     });
@@ -467,6 +479,7 @@
 
   function renderTablePlay() {
     elements.tablePlay.innerHTML = "";
+    elements.tablePlay.classList.toggle("play-burst", Boolean(state.tablePlayReveal));
     if (!state.lastHand) {
       elements.tablePlay.classList.add("empty");
       elements.tablePlay.textContent = "No active hand on the table.";
@@ -474,7 +487,13 @@
       return;
     }
     elements.tablePlay.classList.remove("empty");
-    state.lastPlayedCards.forEach((card) => elements.tablePlay.appendChild(createCardNode(card, false)));
+    state.lastPlayedCards.forEach((card, index) => {
+      const node = createCardNode(card, false);
+      if (state.tablePlayReveal) {
+        applyPlayAnimation(node, index * 55);
+      }
+      elements.tablePlay.appendChild(node);
+    });
     elements.challengeLabel.textContent = `${CHALLENGE_LABELS[state.lastHand.type] || state.lastHand.type} to beat`;
   }
 
@@ -562,6 +581,8 @@
     renderTablePlay();
     renderSelection();
     state.shouldAnimateDeal = false;
+    state.landlordReveal = false;
+    state.tablePlayReveal = false;
   }
 
   function nextPlayerId(playerId) {
@@ -577,6 +598,7 @@
     state.bidWinnerId = playerId;
     state.bidStarterId = playerId;
     state.bidPasses = 0;
+    state.landlordReveal = true;
     addLog(PLAYER_NAMES[playerId], "takes the landlord role.");
   }
 
@@ -628,6 +650,7 @@
     state.lastPlayedCards = sortHand(cards);
     state.lastPlayerId = playerId;
     state.consecutivePasses = 0;
+    state.tablePlayReveal = true;
     state.players[playerId].lastPlayedCards = sortHand(cards);
     state.players[playerId].lastPlayAnalysis = analysis;
     addLog(PLAYER_NAMES[playerId], describePlay(analysis, cards));
@@ -826,7 +849,9 @@
       lastPlayedCards: [],
       lastPlayerId: null,
       landlordCards: deck.slice(51),
+      landlordReveal: false,
       shouldAnimateDeal: true,
+      tablePlayReveal: false,
       selectedIds: new Set(),
       players: {
         player: { hand: deck.slice(0, 17), lastPlayedCards: [], lastPlayAnalysis: null },
