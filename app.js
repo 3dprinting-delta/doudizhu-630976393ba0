@@ -192,6 +192,20 @@
     return [...cards].sort((a, b) => a.value - b.value || a.id.localeCompare(b.id));
   }
 
+  function organizePlayerHand(cards) {
+    const counts = cardCounts(cards);
+    return [...cards].sort((a, b) => {
+      const countDiff = (counts.get(b.value) || 0) - (counts.get(a.value) || 0);
+      if (countDiff !== 0) {
+        return countDiff;
+      }
+      if (a.value !== b.value) {
+        return a.value - b.value;
+      }
+      return a.id.localeCompare(b.id);
+    });
+  }
+
   function cardCounts(cards) {
     const counts = new Map();
     for (const card of cards) {
@@ -467,17 +481,22 @@
   }
 
   function renderPlayerHand(animationPlan) {
-    const displayHand = state.playerHandMode === "sorted" ? sortHand(state.players.player.hand) : state.players.player.hand;
+    const displayHand =
+      state.playerHandMode === "organized" ? organizePlayerHand(state.players.player.hand) : state.players.player.hand;
     elements.playerHand.innerHTML = "";
     displayHand.forEach((card, index) => {
       const node = createCardNode(card, true);
+      const previousCard = displayHand[index - 1];
+      if (previousCard && previousCard.value !== card.value) {
+        node.classList.add("new-group");
+      }
       if (animationPlan) {
         applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
       }
       elements.playerHand.appendChild(node);
     });
     elements.playerCount.textContent = `${state.players.player.hand.length} cards`;
-    elements.handOrderButton.textContent = state.playerHandMode === "sorted" ? "Show dealt order" : "Organize hand";
+    elements.handOrderButton.textContent = state.playerHandMode === "organized" ? "Show raw deal" : "Organize hand";
   }
 
   function renderTablePlay() {
@@ -716,7 +735,7 @@
   }
 
   function togglePlayerHandMode() {
-    state.playerHandMode = state.playerHandMode === "sorted" ? "dealt" : "sorted";
+    state.playerHandMode = state.playerHandMode === "organized" ? "dealt" : "organized";
     renderPlayerHand();
     renderSelection();
   }
@@ -766,10 +785,11 @@
     if (!state.currentTurnId || state.currentTurnId === "player" || state.phase === "finished") {
       return;
     }
+    const delay = state.phase === "bidding" ? 1400 : 700;
     aiTimeout = window.setTimeout(() => {
       aiTimeout = null;
       takeAiTurn(state.currentTurnId);
-    }, 500);
+    }, delay);
   }
 
   function handleBid() {
@@ -862,7 +882,7 @@
       shouldAnimateDeal: true,
       tablePlayReveal: false,
       selectedIds: new Set(),
-      playerHandMode: "sorted",
+      playerHandMode: "organized",
       players: {
         player: { hand: deck.slice(0, 17), lastPlayedCards: [], lastPlayAnalysis: null },
         left: { hand: deck.slice(17, 34), lastPlayedCards: [], lastPlayAnalysis: null },
