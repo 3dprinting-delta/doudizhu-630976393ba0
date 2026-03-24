@@ -73,6 +73,7 @@
     leftCount: document.getElementById("left-count"),
     rightCount: document.getElementById("right-count"),
     playerCount: document.getElementById("player-count"),
+    handOrderButton: document.getElementById("hand-order-button"),
     leftHand: document.getElementById("left-hand"),
     rightHand: document.getElementById("right-hand"),
     playerHand: document.getElementById("player-hand"),
@@ -466,8 +467,9 @@
   }
 
   function renderPlayerHand(animationPlan) {
+    const displayHand = state.playerHandMode === "sorted" ? sortHand(state.players.player.hand) : state.players.player.hand;
     elements.playerHand.innerHTML = "";
-    state.players.player.hand.forEach((card, index) => {
+    displayHand.forEach((card, index) => {
       const node = createCardNode(card, true);
       if (animationPlan) {
         applyDealAnimation(node, animationPlan.startDelay + index * animationPlan.stepMs, animationPlan.lane);
@@ -475,6 +477,7 @@
       elements.playerHand.appendChild(node);
     });
     elements.playerCount.textContent = `${state.players.player.hand.length} cards`;
+    elements.handOrderButton.textContent = state.playerHandMode === "sorted" ? "Show dealt order" : "Organize hand";
   }
 
   function renderTablePlay() {
@@ -712,6 +715,12 @@
     renderSelection();
   }
 
+  function togglePlayerHandMode() {
+    state.playerHandMode = state.playerHandMode === "sorted" ? "dealt" : "sorted";
+    renderPlayerHand();
+    renderSelection();
+  }
+
   function getAiContext() {
     return {
       analyzeHand,
@@ -853,6 +862,7 @@
       shouldAnimateDeal: true,
       tablePlayReveal: false,
       selectedIds: new Set(),
+      playerHandMode: "sorted",
       players: {
         player: { hand: deck.slice(0, 17), lastPlayedCards: [], lastPlayAnalysis: null },
         left: { hand: deck.slice(17, 34), lastPlayedCards: [], lastPlayAnalysis: null },
@@ -878,6 +888,7 @@
   elements.playButton.addEventListener("click", handlePlay);
   elements.passPlayButton.addEventListener("click", handlePassPlay);
   elements.restartButton.addEventListener("click", dealNewRound);
+  elements.handOrderButton.addEventListener("click", togglePlayerHandMode);
   elements.clearLogButton.addEventListener("click", () => {
     elements.logList.innerHTML = "";
     addLog("Table", "Log cleared.");
