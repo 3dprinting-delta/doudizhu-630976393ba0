@@ -97,19 +97,40 @@
   let state;
   let aiTimeout = null;
 
-  function randomInt(maxExclusive) {
+  function createRandomSource() {
     if (window.crypto && window.crypto.getRandomValues) {
-      const array = new Uint32Array(1);
-      const maxUint = 0xffffffff;
-      const limit = maxUint - (maxUint % maxExclusive);
-      let value = maxUint;
-      while (value >= limit) {
-        window.crypto.getRandomValues(array);
-        value = array[0];
+      const buffer = new Uint32Array(128);
+      let cursor = buffer.length;
+
+      function refill() {
+        window.crypto.getRandomValues(buffer);
+        cursor = 0;
       }
-      return value % maxExclusive;
+
+      return {
+        nextInt(maxExclusive) {
+          const maxUint = 0xffffffff;
+          const limit = maxUint - (maxUint % maxExclusive);
+          let value = maxUint;
+
+          while (value >= limit) {
+            if (cursor >= buffer.length) {
+              refill();
+            }
+            value = buffer[cursor];
+            cursor += 1;
+          }
+
+          return value % maxExclusive;
+        },
+      };
     }
-    return Math.floor(Math.random() * maxExclusive);
+
+    return {
+      nextInt(maxExclusive) {
+        return Math.floor(Math.random() * maxExclusive);
+      },
+    };
   }
 
   function makeId() {
@@ -142,10 +163,11 @@
     return deck;
   }
 
-  function shuffle(cards) {
+  function createShuffledDeck(cards) {
     const deck = [...cards];
+    const randomSource = createRandomSource();
     for (let index = deck.length - 1; index > 0; index -= 1) {
-      const swapIndex = randomInt(index + 1);
+      const swapIndex = randomSource.nextInt(index + 1);
       const temp = deck[index];
       deck[index] = deck[swapIndex];
       deck[swapIndex] = temp;
@@ -438,7 +460,7 @@
   }
 
   function getSelectedCards() {
-    return state.players.player.hand.filter((card) => state.selectedIds.has(card.id));
+    return sortHand(state.players.player.hand.filter((card) => state.selectedIds.has(card.id)));
   }
 
   function renderSelection() {
@@ -516,7 +538,7 @@
 
   function claimLandlord(playerId) {
     state.landlordId = playerId;
-    state.players[playerId].hand = sortHand(state.players[playerId].hand.concat(state.landlordCards));
+    state.players[playerId].hand = state.players[playerId].hand.concat(state.landlordCards);
     state.phase = "play";
     state.currentTurnId = playerId;
     state.bidWinnerId = playerId;
@@ -758,7 +780,7 @@
       aiTimeout = null;
     }
 
-    const deck = shuffle(buildDeck());
+    const deck = createShuffledDeck(buildDeck());
     state = {
       phase: "bidding",
       currentTurnId: "player",
@@ -770,12 +792,12 @@
       lastHand: null,
       lastPlayedCards: [],
       lastPlayerId: null,
-      landlordCards: sortHand(deck.slice(51)),
+      landlordCards: deck.slice(51),
       selectedIds: new Set(),
       players: {
-        player: { hand: sortHand(deck.slice(0, 17)), lastPlayedCards: [], lastPlayAnalysis: null },
-        left: { hand: sortHand(deck.slice(17, 34)), lastPlayedCards: [], lastPlayAnalysis: null },
-        right: { hand: sortHand(deck.slice(34, 51)), lastPlayedCards: [], lastPlayAnalysis: null },
+        player: { hand: deck.slice(0, 17), lastPlayedCards: [], lastPlayAnalysis: null },
+        left: { hand: deck.slice(17, 34), lastPlayedCards: [], lastPlayAnalysis: null },
+        right: { hand: deck.slice(34, 51), lastPlayedCards: [], lastPlayAnalysis: null },
       },
     };
 
@@ -787,6 +809,7 @@
 
     elements.logList.innerHTML = "";
     addLog("Table", `${PLAYER_NAMES[starter]} opens the bidding with the heart 3.`);
+    addLog("Table", "Cards stay in dealt order this round so the shuffle is visible.");
     render();
     queueAiTurnIfNeeded();
   }
