@@ -3,161 +3,174 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dead Ringer</title>
+    <title>Dou Dizhu Online</title>
     <meta
       name="description"
-      content="Dead Ringer is a dark social guessing game where you classify real, cited quotes by the institution behind the speaker."
+      content="A browser-based adaptation of the pygame-doudizhu project. Bid for landlord, outplay two AI rivals, and play Dou Dizhu in the browser."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Manrope:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="glow glow-left"></div>
-    <div class="glow glow-right"></div>
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
 
-    <main class="page-shell">
-      <section class="hero-panel">
-        <div class="hero-copy">
-          <p class="eyebrow">Dead Ringer</p>
-          <p class="hero-subhead">Who said that line, and what kind of institution shaped it?</p>
-          <h1>Read the quote. Name the machine behind the voice.</h1>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy panel">
+          <p class="eyebrow">Browser Conversion</p>
+          <h1>Dou Dizhu, rebuilt for the public web.</h1>
           <p class="hero-text">
-            Dead Ringer now pulls from a large cited corpus of political speeches, detective memoirs, sermons,
-            revolutionary tracts, business writing, and more. Each round gives you one real quote and four possible
-            organization families.
+            This site adapts the gameplay flow and AI ideas from the
+            <a href="https://github.com/murphypap/pygame-doudizhu" target="_blank" rel="noreferrer">pygame-doudizhu</a>
+            project into a responsive browser experience.
           </p>
         </div>
 
-        <aside class="scoreboard">
-          <div class="score-card">
-            <p class="score-label">Corpus</p>
-            <p id="corpus-count" class="score-value">...</p>
+        <div class="hero-stats panel">
+          <div class="stat">
+            <span class="stat-label">State</span>
+            <strong id="phase-label">Bidding</strong>
           </div>
-          <div class="score-card">
-            <p class="score-label">Round</p>
-            <p id="round" class="score-value">0 / 8</p>
+          <div class="stat">
+            <span class="stat-label">Current turn</span>
+            <strong id="turn-label">Player</strong>
           </div>
-          <div class="score-card">
-            <p class="score-label">Score</p>
-            <p id="score" class="score-value">0</p>
+          <div class="stat">
+            <span class="stat-label">Landlord</span>
+            <strong id="landlord-label">Undecided</strong>
           </div>
-          <div class="score-card">
-            <p class="score-label">Streak</p>
-            <p id="streak" class="score-value">0</p>
-          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <aside class="player-stack side">
+          <section class="panel opponent">
+            <div class="player-heading">
+              <div>
+                <p class="eyebrow">Opponent</p>
+                <h2>Left AI</h2>
+              </div>
+              <span id="left-role" class="role-pill">Peasant</span>
+            </div>
+            <p id="left-count" class="count-text">17 cards</p>
+            <div id="left-hand" class="opponent-hand"></div>
+            <div id="left-last-play" class="last-play">No cards played yet.</div>
+          </section>
         </aside>
-      </section>
 
-      <section class="setup-panel panel">
-        <div class="setup-copy">
-          <div>
-            <p class="section-kicker">Setup</p>
-            <h2 class="section-title">Choose your pool, then start a run.</h2>
-          </div>
-          <p id="setup-status" class="setup-status">Loading corpus manifest...</p>
-        </div>
-
-        <div class="setup-grid">
-          <section class="setup-group">
-            <div class="setup-heading">
-              <p class="section-kicker">Organization families</p>
-              <button id="reset-families" class="text-button" type="button">Reset</button>
+        <section class="table panel">
+          <div class="table-top">
+            <div>
+              <p class="eyebrow">Center table</p>
+              <h2 id="status-title">Bid for landlord</h2>
             </div>
-            <div id="family-filters" class="chip-grid"></div>
-          </section>
-
-          <section class="setup-group">
-            <div class="setup-heading">
-              <p class="section-kicker">Packs</p>
-              <button id="reset-packs" class="text-button" type="button">Reset</button>
-            </div>
-            <div id="pack-filters" class="chip-grid"></div>
-          </section>
-        </div>
-
-        <div class="setup-footer">
-          <p id="pool-summary" class="pool-summary">Preparing corpus summary...</p>
-          <div class="setup-actions">
-            <button id="start-game" class="primary-button" type="button">Start mixed run</button>
-            <button id="retry-load" class="text-button" type="button" hidden>Retry corpus load</button>
+            <button id="restart-button" class="ghost-button" type="button">New round</button>
           </div>
-        </div>
-      </section>
 
-      <section class="game-layout">
-        <section class="quote-stage panel">
-          <div class="stage-topline">
-            <p class="section-kicker">The line</p>
-            <div class="progress-track" aria-hidden="true">
-              <div id="progress-bar" class="progress-bar"></div>
+          <div class="landlord-band">
+            <div>
+              <p class="mini-label">Landlord cards</p>
+              <div id="landlord-cards" class="landlord-cards"></div>
+            </div>
+            <div class="hand-meta">
+              <p class="mini-label">Current challenge</p>
+              <p id="challenge-label" class="challenge-label">Open lead</p>
             </div>
           </div>
 
-          <blockquote id="quote-text" class="quote-text">
-            Load the setup above to begin. Each quote stays hidden until a run starts.
-          </blockquote>
+          <div class="board-plays">
+            <section class="board-play">
+              <p class="mini-label">Latest table play</p>
+              <div id="table-play" class="play-strip empty">No active hand on the table.</div>
+            </section>
+            <section class="board-log">
+              <div class="log-head">
+                <p class="mini-label">Match log</p>
+                <button id="clear-log-button" class="text-button" type="button">Clear log</button>
+              </div>
+              <ul id="log-list" class="log-list"></ul>
+            </section>
+          </div>
 
-          <div id="choice-grid" class="choice-grid"></div>
-
-          <div id="result-panel" class="result-panel" hidden>
-            <p id="result-badge" class="result-badge"></p>
-            <h2 id="speaker-name" class="speaker-name"></h2>
-            <p id="speaker-meta" class="speaker-meta"></p>
-            <p id="speaker-context" class="speaker-context"></p>
-            <p id="speaker-citation" class="speaker-citation"></p>
-            <div class="result-actions">
-              <a id="citation-link" class="citation-link" href="#" target="_blank" rel="noreferrer">Open source</a>
-              <button id="next-round" class="next-button" type="button">Next line</button>
+          <div class="controls">
+            <div class="action-group">
+              <button id="bid-button" class="action-button gold" type="button">Bid</button>
+              <button id="pass-bid-button" class="action-button" type="button">Pass bid</button>
             </div>
+            <div class="action-group">
+              <button id="play-button" class="action-button green" type="button">Play selected</button>
+              <button id="pass-play-button" class="action-button" type="button">Pass turn</button>
+            </div>
+          </div>
+
+          <div class="selection-panel">
+            <p class="mini-label">Selected cards</p>
+            <div id="selected-cards" class="play-strip empty">Select cards from your hand.</div>
+            <p id="selection-status" class="selection-status">Choose cards to preview the hand type and legality.</p>
           </div>
         </section>
 
-        <aside class="sidebar">
-          <section class="panel sidebar-panel">
-            <p class="section-kicker">Run notes</p>
-            <p id="run-summary" class="sidebar-copy">
-              Each round asks for the speaker's organization family. The reveal then shows the more specific role,
-              institution, context, and source citation.
-            </p>
-          </section>
-
-          <section class="panel sidebar-panel">
-            <div class="sidebar-header">
-              <p class="section-kicker">Case file</p>
-              <button id="restart-game" class="text-button" type="button">Reshuffle run</button>
+        <aside class="player-stack side">
+          <section class="panel opponent">
+            <div class="player-heading">
+              <div>
+                <p class="eyebrow">Opponent</p>
+                <h2>Right AI</h2>
+              </div>
+              <span id="right-role" class="role-pill">Peasant</span>
             </div>
-            <ul id="history-list" class="history-list"></ul>
+            <p id="right-count" class="count-text">17 cards</p>
+            <div id="right-hand" class="opponent-hand"></div>
+            <div id="right-last-play" class="last-play">No cards played yet.</div>
           </section>
+        </aside>
+      </section>
+
+      <section class="bottom-row">
+        <section class="panel player-panel">
+          <div class="player-heading">
+            <div>
+              <p class="eyebrow">You</p>
+              <h2>Your hand</h2>
+            </div>
+            <span id="player-role" class="role-pill">Peasant</span>
+          </div>
+          <p id="player-count" class="count-text">17 cards</p>
+          <div id="player-hand" class="player-hand"></div>
+        </section>
+
+        <aside class="panel rules-panel">
+          <p class="eyebrow">Rules and Notes</p>
+          <h2>How this web build works</h2>
+          <p class="rules-copy">
+            The original Pygame project dealt 17 cards to each player, used bidding to assign the landlord, and let
+            simple AI agents make conservative plays. This site keeps that structure and ports the combination checker
+            and AI decision rules into JavaScript.
+          </p>
+          <ul class="rules-list">
+            <li>The player holding the heart 3 opens the bidding round.</li>
+            <li>Rocket beats everything. Bomb beats every non-rocket hand.</li>
+            <li>If two players pass after a valid play, the table resets and the next player may lead anything.</li>
+            <li>The browser version supports the same main hand types recognized by the upstream game.</li>
+          </ul>
         </aside>
       </section>
     </main>
 
-    <template id="choice-button-template">
-      <button class="choice-button" type="button"></button>
-    </template>
-
-    <template id="filter-chip-template">
-      <button class="filter-chip" type="button">
-        <span class="filter-chip-label"></span>
-        <span class="filter-chip-count"></span>
-      </button>
-    </template>
-
-    <template id="history-item-template">
-      <li class="history-item">
-        <span class="history-index"></span>
-        <div>
-          <p class="history-quote"></p>
-          <p class="history-answer"></p>
-        </div>
+    <template id="log-item-template">
+      <li class="log-item">
+        <span class="log-speaker"></span>
+        <span class="log-message"></span>
       </li>
     </template>
 
+    <script src="./ai.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
